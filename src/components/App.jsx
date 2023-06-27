@@ -2,9 +2,16 @@ import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchContacts } from 'reduce/operation';
 import Login from 'pages/login';
-import Main from 'pages/main';
+import { Main } from 'pages/main';
 import Registration from 'pages/registration';
-import { Routes, Route , NavLink} from "react-router-dom";
+import Home from 'pages/home';
+import { Routes, Route } from "react-router-dom";
+import AllMenus from './AllMenus';
+import { currentUser } from 'reduce/auth-operations';
+import { PrivateRoute } from 'PrivateRoute';
+ import { RestrictedRoute } from './RestrictedRoute';
+import { authSelectors } from 'reduce/auth-selectors';
+
 
 
 
@@ -12,35 +19,52 @@ const App = () => {
   const contacts = useSelector((state) => state.contacts);
   const dispatch = useDispatch();
 
+ const isFetchingCurrentUser = useSelector(authSelectors.isRefreshingCurrent)
   useEffect(() => {
-    const savedContacts = localStorage.getItem('contacts');
-    if (savedContacts) {
+    dispatch(currentUser())
+  },[dispatch])
+
+useEffect(() => {
+  const savedContacts = localStorage.getItem('contacts');
+  if (savedContacts) {
+    console.log(savedContacts);
+    try {
       const parsedContacts = JSON.parse(savedContacts);
       dispatch(fetchContacts(parsedContacts));
+    } catch (error) {
+      console.error('Error parsing contacts:', error);
+      // Обработка ошибки парсинга JSON
     }
-  }, [dispatch]);
+  }
+}, [dispatch]);
+
 
   useEffect(() => {
     localStorage.setItem('contacts', JSON.stringify(contacts));
   }, [contacts]);
 
-  return (
-    <div>
+  
+  
+    return (
+    
+      !isFetchingCurrentUser && (
+       <div>
 
-     <nav>
-      <NavLink to="/">Home</NavLink>
-      <NavLink to="/contacts">About</NavLink>
-      <NavLink to="/registration">Products</NavLink>
+      <nav>
+        <AllMenus/>
+      
      </nav>
       
       
       
       <Routes>
-             <Route path="/" element={<Login />} />
-             <Route path="/contacts" element={<Main />} /> 
-             <Route path="/registration" element={<Registration />} />
+            <Route path="/" element={<Home />} />
+             <Route path="/login" element={<RestrictedRoute redirectTo="/contacts" component={<Login/>} />}/>
+             <Route path="/contacts"  element={<PrivateRoute  redirectTo="/login" component={<Main/>} />}/>
+             <Route path="/registration" element={<RestrictedRoute redirectTo="/contacts" component={<Registration/>} />}/>
       </Routes>
-    </div>
+        </div>
+        )
   );
 };
 

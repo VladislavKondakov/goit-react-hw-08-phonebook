@@ -1,13 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectContacts, selectIsLoading } from "reduce/selectors";
-import { deleteContact } from "reduce/operation";
+import { fetchContacts, deleteContact } from "reduce/operation";
+import { LiContact } from "./ContactList.styled";
 
 const ContactList = () => {
   const contacts = useSelector(selectContacts);
   const isLoading = useSelector(selectIsLoading);
   const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    dispatch(fetchContacts()); // Выполняется при монтировании компонента
+  }, [dispatch]);
 
   const getFilteredContacts = () => {
     if (contacts && searchTerm) {
@@ -33,15 +38,15 @@ const ContactList = () => {
           onChange={handleInputChange}
         />
       </div>
-      <ul>
+      <ul style={{ listStyleType: 'none' }}>
         {getFilteredContacts() &&
           getFilteredContacts().map(({ id, name, number }) => (
-            <li key={id}>
+            <LiContact key={id}>
               {name} - {number}
               <button onClick={() => dispatch(deleteContact(id))}>
                 Delete
               </button>
-            </li>
+            </LiContact>
           ))}
       </ul>
     </>
